@@ -1,0 +1,14 @@
+---
+# handlers file for system_conf
+- name: restart ssh service
+  service:
+    name: ssh
+    state: restarted
+
+- name: ntpdate sync time now
+  command: "ntpdate {{ ntpdate_server }}"
+
+- name: restart systemd-resolved service
+  service:
+    name: systemd-resolved
+    state: restarted

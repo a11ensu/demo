@@ -1,0 +1,24 @@
+---
+# tasks file for add_worker
+# Import common
+- import_role:
+    name: vars
+
+- name: Remove kubeconfig
+  ansible.builtin.file:
+    path: /tmp/k8s_node_names.json
+    state: absent
+
+- name: push local k8s_node_names to target host
+  copy:
+    src: ./tmp/k8s_node_names.json
+    dest: /tmp/k8s_node_names.json
+
+- name: load k8s_node_names to facts
+  set_fact:
+    k8s_node_names: "{{ ( lookup('file', './tmp/k8s_node_names.json') | from_json ) }}"
+
+- name: Only new host can add to cluster
+  include_tasks:
+    file: do_add_worker.yml
+  when: host_name not in k8s_node_names

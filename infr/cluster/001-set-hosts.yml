@@ -1,0 +1,23 @@
+---
+# configure /etc/hosts
+- name: configure /etc/hosts
+  hosts: allnodes
+  vars:
+    domain_name: "undefined"
+    domain_ip: "undefined"
+  tasks:
+    - name: "check parameter: domain_name"
+      fail:
+        msg: "domain_name is undefined"
+      when: domain_name == "undefined"
+
+    - name: "check parameter: domain_ip"
+      fail:
+        msg: "domain_ip is undefined"
+      when: domain_ip == "undefined"
+    
+    - name: Add hostname to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ domain_ip }} {{ domain_name }}"
+        state: present

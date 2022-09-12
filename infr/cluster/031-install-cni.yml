@@ -1,0 +1,47 @@
+---
+# Refer: https://docs.ansible.com/ansible/latest/user_guide/playbooks.html
+- hosts: runner
+  # gather_facts: no
+  vars_files:
+  - ./vars/pass_vars.yaml
+  - ./vars/kube_vars.yaml
+  tasks:
+    # Import variables
+    - import_role:
+        name: vars
+
+    - name: Recursively remove directory
+      ansible.builtin.file:
+        path: $HOME/working/cis
+        state: absent
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: $HOME/working/cis
+        state: directory
+        mode: '0755'
+
+    - name: create x template
+      template:
+        src: "{{ item }}"
+        dest: $HOME/working/cis/{{ item | basename | regex_replace('\.j2$', '') }}
+      with_fileglob:
+        - ./templates/cis/*.j2
+
+    - name: Recursively remove directory
+      ansible.builtin.file:
+        path: $HOME/working/cni
+        state: absent
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: $HOME/working/cni
+        state: directory
+        mode: '0755'
+
+    - name: create x template
+      template:
+        src: "{{ item }}"
+        dest: $HOME/working/cni/{{ item | basename | regex_replace('\.j2$', '') }}
+      with_fileglob:
+        - ./templates/cni/*.j2

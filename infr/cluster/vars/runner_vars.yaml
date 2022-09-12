@@ -1,0 +1,5 @@
+# vars file for bigip configuration
+
+runner:
+  gitlab: true
+  helm: true

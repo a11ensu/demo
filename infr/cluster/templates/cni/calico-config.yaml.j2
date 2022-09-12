@@ -1,0 +1,30 @@
+apiVersion: projectcalico.org/v3
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  logSeverityScreen: Info
+  nodeToNodeMeshEnabled: true
+  nodeMeshMaxRestartTime: 120s
+  asNumber: {{ kube.asNumber }}
+  serviceClusterIPs:
+  - cidr: {{ kube.svcCIDR }}
+  serviceExternalIPs:
+  - cidr: {{ kube.svcExtCIDR }}
+  bindMode: NodeIP
+  communities:
+  - name: bgp-large-community
+    value: {{ kube.asNumber }}:300:100
+  prefixAdvertisements:
+  - cidr: {{ kube.svcCIDR }}
+    communities:
+    - bgp-large-community
+    - {{ kube.asNumber }}:120
+---
+apiVersion: projectcalico.org/v3
+kind: BGPPeer
+metadata:
+  name: hub-bgp-peer
+spec:
+  peerIP: {{ bip.kubeVlanSelf }}
+  asNumber: {{ bip.asNumber }}

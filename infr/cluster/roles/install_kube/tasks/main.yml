@@ -1,0 +1,99 @@
+---
+# tasks file for kubenodes_conf
+
+# Import common variables
+- import_role:
+    name: vars
+
+# disable swap
+- name: disable swapoff now
+  shell: swapoff -a
+      
+- name: disable swapoff permanently
+  replace:
+    path: /etc/fstab
+    regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+    replace: '#\1\2\3swap\4'
+    backup: yes
+
+- name: add docker-ce GPG key
+  apt_key:
+    url: "{{ apt.docker.apt_key_url }}"
+    state: present
+
+- name: add docker-ce APT repository
+  apt_repository:
+    repo: "deb [arch=amd64] {{ apt.docker.apt_repository }} {{ ansible_lsb.codename }} stable"
+    state: present
+    update_cache: no
+
+- name: add kube GPG key
+  apt_key:
+    url: "{{ apt.kube.apt_key_url }}"
+    state: present
+
+- name: add kube APT repository
+  apt_repository:
+    repo: "deb {{ apt.kube.apt_repository }} kubernetes-xenial main"
+    state: present
+    update_cache: no
+
+- name: check if docker installed
+  stat:
+    path: /usr/bin/docker
+  register: check_docker
+
+- name: check if kubelet installed
+  stat:
+    path: /usr/bin/kubelet
+  register: check_kubelet
+
+- name: update apt cache
+  apt:
+    update_cache: yes
+  when: check_docker.stat.exists == False or check_kubelet.stat.exists == False
+
+- name: install docker-ce pkg
+  apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+
+- name: setup /etc/docker/daemon.json
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+    mode: u=rw,g=r,o=r
+  notify: restart docker service
+
+- name: setup /etc/sysctl.d/k8s.conf
+  copy:
+    src: sysctl.d.k8s.conf
+    dest: /etc/sysctl.d/k8s.conf
+  notify: load /etc/sysctl.d/k8s.conf
+
+- name: setup /etc/sysctl.d/88-hugepages.conf
+  copy:
+    src: sysctl.d.88-hugepages.conf
+    dest: /etc/sysctl.d/88-hugepages.conf
+  notify: load /etc/sysctl.d/88-hugepages.conf
+
+- name: install k8s pkgs
+  apt:
+    pkg:
+      - kubelet={{kube.version}}
+      - kubeadm={{kube.version}} 
+      - kubectl={{kube.version}}
+
+- name: 'apt hold version'
+  shell: |
+    apt-mark hold kubelet kubeadm kubectl
+    systemctl daemon-reload
+    systemctl restart kubelet
+
+- name: Add cluster name to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ first_master }} {{ kube.control_plane_dns }}"
+    state: present

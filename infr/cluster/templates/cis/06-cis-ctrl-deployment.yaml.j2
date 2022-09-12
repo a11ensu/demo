@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cis202-deployment
+  namespace: kube-system
+spec:
+# DO NOT INCREASE REPLICA COUNT
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cis-ctlr-deployment
+  template:
+    metadata:
+      labels:
+        app: cis-ctlr-deployment
+    spec:
+      # Name of the Service Account bound to a Cluster Role with the required
+      # permissions
+      containers:
+        - name: k8s-bigip-ctlr
+          image: "f5networks/k8s-bigip-ctlr:latest"
+          env:
+            - name: BIGIP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                # Replace with the name of the Secret containing your login
+                # credentials
+                  name: bigip-login
+                  key: username
+            - name: BIGIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                # Replace with the name of the Secret containing your login
+                # credentials
+                  name: bigip-login
+                  key: password
+          command: ["/app/bin/k8s-bigip-ctlr"]
+          args: [
+            # See the k8s-bigip-ctlr documentation for information about
+            # all config options
+            # https://clouddocs.f5.com/containers/latest/
+            "--bigip-username=$(BIGIP_USERNAME)",
+            "--bigip-password=$(BIGIP_PASSWORD)",
+            "--bigip-url=10.80.255.202",
+            "--bigip-partition=kubeIngress",
+            "--log-as3-response=true",
+            "--log-level=DEBUG",
+            #"--custom-resource-mode=true",
+            "--pool-member-type=cluster",
+            #"--pool-member-type=nodeport",
+            #"--flannel-name=/Common/flannel_vxlan",
+            "--openshift-sdn-name=/Common/vxlan_cilium",
+            "--default-ingress-ip=10.170.155.137",
+            #"--namespaces=ingress",
+            "--namespace-label=type=ingressbip",
+            "--ingress-class=ingress202",
+            "--insecure"
+            ]
+      serviceAccountName: bigip-ctlr
+

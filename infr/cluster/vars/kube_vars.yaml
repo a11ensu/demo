@@ -1,0 +1,38 @@
+# vars file for bigip configuration
+
+bip:
+  user: "{{ bipUser }}"
+  password: "{{ bipPass }}"
+  server: "{{ inventory_hostname }}"
+  validate_certs: no
+  #server_port: 10002
+  server_port: 443
+  asNumber: '65061'
+  kubeVlanSelf: '10.61.255.254'
+  bgpGroup: 'calico-k8s'
+
+
+bipTunn:
+  tunnName: 'vxlan_flannel'
+  tunnProf: 'vxlan_profi'
+  selfName: 'vxlan_self'
+  selfAddr: '172.17.236.3'
+  cidrMask: '255.255.255.0'
+
+bipZebos:
+
+kube:
+  podCidr: '10.0.0.0'
+  podMask: '255.255.0.0'
+  podCIDR: '10.0.0.0/16'
+  svcCIDR: '10.1.0.0/16'
+  svcExtCIDR: '10.2.0.0/16'
+  namespace: ''
+  ingressclass: ''
+  bigip-url: 
+  bigip-partition: 
+  pool-member-type:
+  tunnel-name: ''
+  namespace-label: 
+  interface: 'Internal'
+  asNumber: '65061'

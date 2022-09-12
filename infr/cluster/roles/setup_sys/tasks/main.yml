@@ -1,0 +1,130 @@
+---
+# tasks file for system_conf
+# Import variables
+- import_role:
+    name: vars
+
+- name: setup hostname
+  hostname:
+    name: "{{ host_name }}" 
+
+- name: update loopback in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.0\.1[ \t]+localhost'
+    line: '127.0.0.1 localhost {{ host_name }}'
+    state: present
+
+- name: add dns
+  blockinfile:
+    path: /etc/systemd/resolved.conf
+    backup: yes
+    insertafter: "\\[Resolve\\]"
+    block: |
+      DNS={{ dns_server }}
+    state: present
+  notify: restart systemd-resolved service
+
+- name: PermitRootLogin
+  blockinfile:
+    path: /etc/ssh/sshd_config
+    block: |
+      PermitRootLogin yes
+    state: present
+  notify: restart ssh service
+  
+- name: "disable ufw [Uncomplicated Firewall]"
+  service:
+    name: ufw
+    enabled: no
+    state: stopped
+    
+- name: install dependence pkgs
+  apt:
+    update_cache: yes
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+      - curl
+      - vim
+      - tree
+      - jq
+      - gnupg2
+      - gnupg-agent
+      - python3-pip
+      - iptables
+      - ntpdate
+      - rsync
+      - ipvsadm
+      - ipset
+    state: present
+
+- name: setup timezone
+  timezone:
+    hwclock: UTC
+    name: Australia/Melbourne
+  
+- name: setup ntpdate cron task
+  cron:
+    name: ntpdate sync time daily
+    job: "ntpdate {{ ntpdate_server }}"
+    day: "*"
+    hour: "3"
+    minute: "0"
+  notify: ntpdate sync time now
+
+- name: enable ip_vs kernel module auto loading when reboot
+  blockinfile:
+    path: /etc/modules
+    backup: yes
+    block: |
+      ip_vs
+      ip_vs_rr
+      ip_vs_wrr
+      ip_vs_sh
+      nf_conntrack_ipv4
+      overlay
+      br_netfilter
+    state: present
+
+- name: Load overlay kernel module
+  modprobe:
+    name: overlay
+    state: present
+
+- name: Load br_netfilter kernel module
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Load ip_vs kernel module
+  modprobe:
+    name: ip_vs
+    state: present
+
+- name: Load ip_vs_rr kernel module
+  modprobe:
+    name: ip_vs_rr
+    state: present
+
+- name: Load ip_vs_wrr kernel module
+  modprobe:
+    name: ip_vs_wrr
+    state: present
+
+- name: Load ip_vs_sh kernel module
+  modprobe:
+    name: ip_vs_sh
+    state: present
+
+- name: Load nf_conntrack kernel module
+  modprobe:
+    name: nf_conntrack
+    state: present
+
+- name: remove nftables
+  apt:
+    pkg:
+      - nftables
+    state: absent

@@ -1,0 +1,55 @@
+# refer: http://ansible.com.cn/docs/intro_inventory.html
+
+# All Nodes
+[allnodes:children]
+kubenodes
+ctrlnodes
+
+#[allnodes:vars]
+#kube_API_IP=10.61.255.201
+#kube_interface=Internal
+#kube_podCIDR=10.0.0.0/16
+
+# Kubernetes Cluster Nodes
+[kubenodes:children]
+master
+worker
+
+[master:children]
+first_master
+other_master
+
+## 1st Master Nodes
+[first_master]
+10.201.184.216 host_name=master01
+
+## other Master Nodes
+[other_master]
+
+## Worker nodes
+[worker]
+10.201.184.217 host_name=worker01
+10.201.184.218 host_name=worker02
+
+#  Control Plane Nodes
+[ctrlnodes:children]
+runner
+
+[runner]
+10.201.184.219 host_name=runner
+
+[runner108]
+10.101.12.108 host_name=runner108 ansible_ssh_user=allen
+
+#  BIP Nodes
+[bip]
+10.200.155.131 host_name=bip
+
+[all:vars]
+ansible_ssh_user=root
+ansible_ssh_private_key_file=/home/allen/.ssh/node108
+ansible_python_interpreter=/usr/bin/python3
+# ansible_become=yes
+# ansible_become_user=root
+# ansible_become_pass=vagrant
+# Ansible priviledges: http://ansible.com.cn/docs/become.html?highlight=become

@@ -1,0 +1,38 @@
+---
+# defaults file for common
+
+kube:
+    control_plane_dns: kubeapi.sincluster.local
+    control_plane_port: 6443
+    # apiserver_advertise_address: 0.0.0.0
+    apiserver_bind_port: 6443
+    # ref: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network
+    pod_network_cidr: "10.0.0.0/16"
+    service_cidr: "10.1.0.0/16"
+    service_dns_domain: "sincluster.local"
+    interface: Internal
+    version: "1.23.9-00"
+
+runner:
+    helm: true
+    gitlab: true
+
+apt:
+    docker:
+        apt_key_url: https://download.docker.com/linux/ubuntu/gpg
+        apt_repository: https://download.docker.com/linux/ubuntu
+    kube:
+        apt_key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        apt_repository: https://apt.kubernetes.io/
+
+
+# master node number
+master_count: "{{ groups['master'] | length }}"
+# single master node ?
+single_master: "{{ (groups['master'] | length) == 1 }}"
+# 
+first_master: "{{ groups['first_master'] | first }}"
+
+ntpdate_server: time.google.com
+
+dns_server: 10.154.1.241

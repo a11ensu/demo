@@ -1,0 +1,201 @@
+---
+# tasks file for console_conf
+
+# Import common variables
+- import_role:
+    name: vars
+
+- name: add docker-ce GPG key
+  apt_key:
+    url: "{{ apt.docker.apt_key_url }}"
+    state: present
+
+- name: add docker-ce APT repository
+  apt_repository:
+    repo: "deb [arch=amd64] {{ apt.docker.apt_repository }} {{ ansible_lsb.codename }} stable"
+    state: present
+    update_cache: no
+
+- name: add kube GPG key
+  apt_key:
+    url: "{{ apt.kube.apt_key_url }}"
+    state: present
+
+- name: add kube APT repository
+  apt_repository:
+    repo: "deb {{ apt.kube.apt_repository }} kubernetes-xenial main"
+    state: present
+    update_cache: no
+
+- name: check if docker installed
+  stat:
+    path: /usr/bin/docker
+  register: check_docker
+
+- name: check if kubelet installed
+  stat:
+    path: /usr/bin/kubelet
+  register: check_kubelet
+
+- name: update apt cache
+  apt:
+    update_cache: yes
+  when: check_docker.stat.exists == False or check_kubelet.stat.exists == False
+
+- name: remove kubectl if installed
+  shell: |
+    apt-mark unhold kubectl
+    apt-get remove kubectl
+
+- name: install kubectl pkgs
+  apt:
+    pkg:
+      - kubectl={{kube.version}}
+
+- name: 'apt hold version'
+  shell: |
+    apt-mark hold kubectl
+    systemctl daemon-reload
+
+- name: Add cluster name to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ first_master }} {{ kube.control_plane_dns }}"
+    state: present
+
+- name: Recursively remove directory
+  ansible.builtin.file:
+    path: $HOME/.kube
+    state: absent
+
+- name: "setup kubectl env"
+  shell: |
+    mkdir -p $HOME/.kube
+
+- name: push local kubeconfig to target host
+  copy:
+    src: ./tmp/kubeconfig-{{ kube.control_plane_dns }}.conf
+    dest: $HOME/.kube/config
+
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path: $HOME/working
+    state: directory
+    mode: '0755'
+
+#- name: Create a directory if it does not exist
+#  ansible.builtin.file:
+#    path: $HOME/working/cni
+#    state: directory
+#    mode: '0755'
+
+#- name: copy flannel.yaml to master
+#  template:
+#    src: flannel.yaml.j2
+#    dest: $HOME/working/cni/flannel.yaml
+
+#- name: install flannel
+#  command: kubectl apply -f $HOME/working/cni/flannel.yaml
+
+- name: create download directory
+  file:
+    state: directory
+    mode: 'u=rwx,go=rx'
+    dest: '{{ helm_download_dir }}'
+
+- name: download sha256sum
+  get_url:
+    url: '{{ helm_mirror }}/{{ helm_redis_filename }}.sha256'
+    dest: '{{ helm_download_dir }}/{{ helm_redis_filename }}.sha256'
+    force: no
+    use_proxy: yes
+    validate_certs: yes
+    mode: 'u=rw,go=r'
+
+- name: read sha256sum
+  slurp:
+    src: '{{ helm_download_dir }}/{{ helm_redis_filename }}.sha256'
+  register: helm_sha256sum
+
+- name: download Helm
+  get_url:
+    url: '{{ helm_mirror }}/{{ helm_redis_filename }}'
+    dest: '{{ helm_download_dir }}/{{ helm_redis_filename }}'
+    checksum: 'sha256:{{ helm_sha256sum.content | b64decode | trim }}'
+    force: no
+    use_proxy: yes
+    validate_certs: yes
+    mode: 'u=rw,go=r'
+
+- name: download Calicoctl
+  get_url:
+    url: 'https://github.com/projectcalico/calico/releases/download/v3.24.1/calicoctl-linux-amd64'
+    dest: '/usr/local/bin/calicoctl'
+    #checksum: 'sha256:{{ helm_sha256sum.content | b64decode | trim }}'
+    force: no
+    use_proxy: yes
+    validate_certs: yes
+    mode: 'u=rwx'
+
+- name: check current version
+  command: >
+    {{ helm_install_dir }}/helm version --client --template {{ "'{{ if .Version }}{{ .Version }}{{ else }}{{ .Client.SemVer }}{{ end }}'" }}
+  register: helm_current_version
+  failed_when: no
+  changed_when: no
+
+- name: current version
+  debug:
+    msg: '{{ helm_current_version.stdout }}'
+  when: helm_current_version.rc == 0
+
+- name: remove existing installation
+  become: yes
+  file:
+    path: '{{ helm_install_dir }}'
+    state: absent
+  when:
+    - helm_current_version.rc == 0
+    - helm_current_version.stdout != ('v' + helm_version)
+
+- name: create the Helm installation dir
+  become: yes
+  file:
+    state: directory
+    owner: root
+    group: root
+    mode: 'u=rwx,go=rx'
+    dest: '{{ helm_install_dir }}'
+
+- name: install unarchive module dependencies (apt, yum, dnf, zypper)
+  become: yes
+  package:
+    name:
+      - tar
+      - unzip
+      - gzip
+    state: present
+  when: ansible_pkg_mgr in ('apt', 'yum', 'dnf', 'zypper')
+
+- name: install Helm
+  become: yes
+  unarchive:
+    src: '{{ helm_download_dir }}/{{ helm_redis_filename }}'
+    remote_src: yes
+    dest: '{{ helm_install_dir }}'
+    extra_opts:
+      - '--strip-components=1'
+    owner: root
+    group: root
+    mode: 'o-w'
+    creates: '{{ helm_install_dir }}/helm'
+
+- name: create helm link
+  become: yes
+  file:
+    src: '{{ helm_install_dir }}/helm'
+    dest: '/usr/local/bin/helm'
+    state: link
+    owner: root
+    group: root
+    mode: 'u=rwx,go=rx'

@@ -1,0 +1,13 @@
+---
+# Refer: https://docs.ansible.com/ansible/latest/user_guide/playbooks.html
+- name: System level configuration for all nodes
+  hosts: allnodes
+  tasks:
+    - include_role:
+        name: setup_sys
+
+- name: Install Kubernetes on kubenodes
+  hosts: kubenodes
+  tasks:
+    - include_role:
+        name: install_kube

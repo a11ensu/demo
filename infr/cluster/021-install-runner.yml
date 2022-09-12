@@ -1,0 +1,15 @@
+---
+# Refer: https://docs.ansible.com/ansible/latest/user_guide/playbooks.html
+- name: Install runner node
+  hosts: runner
+  # gather_facts: no
+  vars_files:
+  - ./vars/runner_vars.yaml
+  tasks:
+    - include_role:
+        name: install_helm
+      when: runner.helm == true
+
+    - include_role:
+        name: install_gitlab_runner
+      when: runner.gitlab == true

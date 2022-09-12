@@ -1,0 +1,8 @@
+---
+# test all Nodes connectivity 
+- name: ping All Nodes
+  hosts: allnodes
+  gather_facts: false
+  tasks:
+    - name: ping
+      ping:

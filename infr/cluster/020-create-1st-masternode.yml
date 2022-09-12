@@ -1,0 +1,68 @@
+# Create the 1st maseter node
+- name: Create the 1st master node for cluster
+  hosts: first_master
+  tasks:
+    # Import variables
+    - import_role:
+        name: vars
+    
+    # Refer: https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/
+    - name: create the first master node
+      command:
+        argv:
+          - kubeadm
+          - init
+          - "--apiserver-advertise-address"
+          - "{{ first_master }}"
+          - "--apiserver-bind-port"
+          - "{{ kube.apiserver_bind_port }}"
+          - "--control-plane-endpoint"
+          - "{{ kube.control_plane_dns }}:{{ kube.control_plane_port }}"
+          - "--node-name"
+          - "{{ host_name }}"
+          - "--pod-network-cidr"
+          - "{{ kube.pod_network_cidr }}"
+          - "--service-cidr"
+          - "{{ kube.service_cidr }}"
+          - "--service-dns-domain"
+          - "{{ kube.service_dns_domain }}"
+
+#    - name: Remove flannel.yaml
+#      ansible.builtin.file:
+#        path: /tmp/flannel.yaml
+#        state: absent
+
+#    - name: copy flannel.yaml to master
+#      template:
+#        src: flannel.yaml.j2
+#        dest: /tmp/flannel.yaml
+    
+#    - name: setup kubectl env
+#      shell:
+#        cmd: "mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config"
+#        warn: false
+
+    - name: Remove kubeconfig
+      ansible.builtin.file:
+        path: $HOME/.kube/config
+        state: absent
+
+    - name: setup kubectl env on master
+      shell: |
+        mkdir -p $HOME/.kube
+        cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        chown $(id -u):$(id -g) $HOME/.kube/config
+
+    - name: pull kubeconfig file to local
+      synchronize:
+        mode: pull
+        src: /etc/kubernetes/admin.conf
+        dest: ./tmp/kubeconfig-{{ kube.control_plane_dns }}.conf
+
+    #- name: install calico pod network add-on
+    #  command: kubectl apply -f /tmp/calico.yaml
+
+#    - name: install flannel pod network add-on
+#      command: kubectl apply -f /tmp/flannel.yaml
+    
+

@@ -1,0 +1,13 @@
+---
+    # Refer: https://docs.ansible.com/ansible/latest/user_guide/playbooks.html
+    - hosts: runner
+      gather_facts: no
+      #vars_files:
+      #- ./vars/runner_vars.yaml
+      tasks:
+        - import_role:
+            name: vars
+
+        - name: print all variables
+          debug:
+            var=vars
