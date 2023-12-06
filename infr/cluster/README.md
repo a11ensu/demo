@@ -3,6 +3,16 @@
 
 ### copy ssh key to remote server
 ```bash
+    ssh-keygen -f "/home/allen/.ssh/known_hosts" -R "10.171.184.193"
+    ssh-keygen -f "/home/allen/.ssh/known_hosts" -R "10.171.184.194"
+    ssh-keygen -f "/home/allen/.ssh/known_hosts" -R "10.171.184.195"
+    ssh-keygen -f "/home/allen/.ssh/known_hosts" -R "10.171.184.197"
+
+    sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@10.171.184.193
+    sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@10.171.184.194
+    sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@10.171.184.195
+    sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@10.171.184.197
+
 sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@runner
 sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@master01
 sshpass -p "default" ssh-copy-id -i ~/.ssh/node108.pub -o StrictHostKeyChecking=accept-new  root@worker01
@@ -20,6 +30,12 @@ ansible-playbook 001-set-hosts.yml -e "domain_name=master01 domain_ip=10.61.255.
 ansible-playbook 001-set-hosts.yml -e "domain_name=worker01 domain_ip=10.61.255.202"
 ansible-playbook 001-set-hosts.yml -e "domain_name=worker02 domain_ip=10.61.255.203"
 ansible-playbook 001-set-hosts.yml -e "domain_name=runner domain_ip=10.61.255.101"
+
+
+ansible-playbook 001-set-hosts.yml -e "domain_name=master01 domain_ip=10.81.255.201"
+ansible-playbook 001-set-hosts.yml -e "domain_name=worker01 domain_ip=10.81.255.202"
+ansible-playbook 001-set-hosts.yml -e "domain_name=worker02 domain_ip=10.81.255.203"
+ansible-playbook 001-set-hosts.yml -e "domain_name=runner domain_ip=10.81.255.101"
 ```
 
 ### system level setup for all nodes

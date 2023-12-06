@@ -22,11 +22,11 @@ bipTunn:
 bipZebos:
 
 kube:
-  podCidr: '10.0.0.0'
+  podCidr: '10.63.0.0'
   podMask: '255.255.0.0'
-  podCIDR: '10.0.0.0/16'
-  svcCIDR: '10.1.0.0/16'
-  svcExtCIDR: '10.2.0.0/16'
+  podCIDR: '10.63.0.0/16'
+  svcCIDR: '10.64.0.0/16'
+  svcExtCIDR: '10.65.0.0/16'
   namespace: ''
   ingressclass: ''
   bigip-url: 

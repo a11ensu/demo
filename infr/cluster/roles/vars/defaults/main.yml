@@ -7,8 +7,8 @@ kube:
     # apiserver_advertise_address: 0.0.0.0
     apiserver_bind_port: 6443
     # ref: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network
-    pod_network_cidr: "10.0.0.0/16"
-    service_cidr: "10.1.0.0/16"
+    pod_network_cidr: "10.63.0.0/16"
+    service_cidr: "10.64.0.0/16"
     service_dns_domain: "sincluster.local"
     interface: Internal
     version: "1.23.9-00"

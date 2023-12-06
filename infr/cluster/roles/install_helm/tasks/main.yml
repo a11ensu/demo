@@ -45,7 +45,7 @@
 - name: remove kubectl if installed
   shell: |
     apt-mark unhold kubectl
-    apt-get remove kubectl
+    apt-get remove kubectl -y
 
 - name: install kubectl pkgs
   apt:
@@ -127,15 +127,15 @@
     validate_certs: yes
     mode: 'u=rw,go=r'
 
-- name: download Calicoctl
-  get_url:
-    url: 'https://github.com/projectcalico/calico/releases/download/v3.24.1/calicoctl-linux-amd64'
-    dest: '/usr/local/bin/calicoctl'
-    #checksum: 'sha256:{{ helm_sha256sum.content | b64decode | trim }}'
-    force: no
-    use_proxy: yes
-    validate_certs: yes
-    mode: 'u=rwx'
+#- name: download Calicoctl
+#  get_url:
+#    url: 'https://github.com/projectcalico/calico/releases/download/v3.24.1/calicoctl-linux-amd64'
+#    dest: '/usr/local/bin/calicoctl'
+#    #checksum: 'sha256:{{ helm_sha256sum.content | b64decode | trim }}'
+#    force: no
+#    use_proxy: yes
+#    validate_certs: yes
+#    mode: 'u=rwx'
 
 - name: check current version
   command: >
